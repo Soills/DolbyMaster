@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./three.module.js",
+        "three/addons/": "./jsm/"
+      }
+    }
+  </script>
+  <title>3D Audio Spectrogram Visualiser</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      overflow: hidden;
+    }
+    #startButton {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 30px;
+      font-size: 18px;
+      color: #000000;
+      background-color: rgb(255, 255, 255);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    #settingsBtn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid #333;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10;
+      font-family: Arial, sans-serif;
+    }
+    #settingsBtn:hover {
+      background: #222;
+      border-color: #555;
+    }
+    #controlContainer {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 32px 24px 20px 24px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: auto;
+    }
+    #closeSettingsBtn {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    #closeSettingsBtn:hover {
+      color: #fff;
+    }
+    .group-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 2px;
+      font-weight: bold;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+    .select-group {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+    .divider {
+      width: 100%;
+      border-top: 1px solid #333;
+      margin: 6px 0;
+    }
+    select {
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    input[type="range"] {
+      width: 250px;
+      cursor: pointer;
+      accent-color: #fff;
+    }
+    input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Standalone Trigger Button -->
+  <button id="settingsBtn" style="display: none;">Settings</button>
+  
+  <button id="startButton">Start</button>
+  
+  <div id="controlContainer">
+    <!-- Close Window Corner Anchor -->
+    <button id="closeSettingsBtn" title="Close Settings">&times;</button>
+
+    <!-- Tier 1: Audio Input & Processing -->
+    <div class="group-title">Audio & Analysis</div>
+    
+    <div class="select-group">
+      <label for="sourceSelect">Audio Source:</label>
+      <select id="sourceSelect">
+        <option value="mic" selected>Audio Input</option>
+        <option value="tab">Browser Tab</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label for="freqScaleSelect">Frequency Scale:</label>
+      <select id="freqScaleSelect">
+        <option value="logarithmic" selected>Logarithmic</option>
+        <option value="linear">Linear</option>
+      </select>
+    </div>
+    <div class="slider-group">
+      <label for="minFreqSlider" id="minFreqLabel">Min Frequency: 0 Hz</label>
+      <input type="range" id="minFreqSlider" min="0" max="9000" step="500" value="0">
+    </div>
+    <div class="slider-group">
+      <label for="freqSlider" id="sliderLabel">Max Frequency: 10.0 kHz</label>
+      <input type="range" id="freqSlider" min="1000" max="22000" step="500" value="10000">
+    </div>
+    <div class="slider-group">
+      <label for="timeSlider" id="timeLabel">Time Window: 2.0s</label>
+      <input type="range" id="timeSlider" min="2" max="15" step="0.5" value="2">
+    </div>
+
+    <div class="divider"></div>
+    
+    <!-- Tier 2: 3D Spectrogram Geometry -->
+    <div class="group-title">Mesh Geometry</div>
+
+    <div class="slider-group">
+      <label id="precisionLabel" for="precisionSlider">Mesh Precision: 128x128</label>
+      <input type="range" id="precisionSlider" min="64" max="1024" step="64" value="128">
+    </div>
+    <div class="select-group">
+      <label for="wireframeToggle">Show Wireframe:</label>
+      <input type="checkbox" id="wireframeToggle" checked>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Tier 3: Environment & Aesthetics -->
+    <div class="group-title">Display & Style</div>
+
+    <div class="select-group">
+      <label for="visualisationSelect">Visual Mode:</label>
+      <select id="visualisationSelect">
+        <option value="ceiling" selected>Blueprint Box</option>
+        <option value="blueprint">No Ceiling</option>
+        <option value="none">Mesh Only</option>
+      </select>
+    </div>
+    <div class="select-group">
+      <label for="colorSchemeSelect">Colour Scheme:</label>
+      <select id="colorSchemeSelect">
+        <option value="standard" selected>Standard</option>
+        <option value="synthwave">Synthwave</option>
+        <option value="glacier">Glacier</option>
+        <option value="magma">Magma</option>
+        <option value="cyberpunk">Cyberpunk</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Real-time Data Hover Tooltip Overlay -->
+  <div id="spectrogramTooltip" style="position: absolute; display: none; background: rgba(0, 0, 0, 0.9); color: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #444; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5; pointer-events: none; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></div>
+
+  <script type="module" src="./app.js"></script>
+  <script type="module" src="./inject-bridge.js"></script>
+
+  <!-- Mutual Exclusion Visibility Toggle Engine -->
+  <script>
+    const settingsBtn = document.getElementById('settingsBtn');
+    const controlContainer = document.getElementById('controlContainer');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+    closeSettingsBtn.addEventListener('click', () => {
+      controlContainer.style.display = 'none';
+      settingsBtn.style.display = 'block';
+    });
+
+    settingsBtn.addEventListener('click', () => {
+      controlContainer.style.display = 'flex';
+      settingsBtn.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
